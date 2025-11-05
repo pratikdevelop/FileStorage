@@ -1,0 +1,5 @@
+{
+  "name": "SecureVault Pro - Chunked File Uploader",
+  "description": "A React application demonstrating a chunked file upload system with drag-and-drop functionality, simulating uploads for an enterprise-grade secure file platform.",
+  "requestFramePermissions": []
+}
