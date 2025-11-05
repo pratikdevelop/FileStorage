@@ -1,9 +1,12 @@
-import { useState, useCallback, useRef } from 'react';
+
+import { useState, useCallback, useRef, useContext } from 'react';
 import { FileUpload, Chunk, ChunkStatus } from '../types';
 import { CHUNK_SIZE, SIMULTANEOUS_UPLOADS } from '../constants';
+import { AuthContext } from '../contexts/AuthContext';
 
 export const useFileUploader = () => {
   const [fileUploads, setFileUploads] = useState<FileUpload[]>([]);
+  const auth = useContext(AuthContext);
   
   // Refs to manage upload queue and state without causing re-renders
   const fileUploadsRef = useRef<FileUpload[]>([]);
@@ -42,12 +45,19 @@ export const useFileUploader = () => {
       const { id: fileId, file } = fileUpload;
       const { id: chunkId, blob } = chunk;
       
-      // This endpoint points to the Go backend service.
-      // Ensure the Go backend is running on localhost:8080.
       const API_ENDPOINT = `http://localhost:8080/api/upload/${fileId}`;
 
       const xhr = new XMLHttpRequest();
       xhr.open('POST', API_ENDPOINT, true);
+      
+      // Add authentication token to the request header
+      if (auth?.token) {
+        xhr.setRequestHeader('Authorization', `Bearer ${auth.token}`);
+      } else {
+        console.error("Authentication token not found. Upload will likely fail.");
+        updateChunkState(fileId, chunkId, ChunkStatus.Error, 0);
+        return reject(new Error('Auth token not found'));
+      }
 
       xhr.upload.onprogress = (event) => {
         if (event.lengthComputable) {
@@ -108,9 +118,14 @@ export const useFileUploader = () => {
         }
       }
     }
-  }, []); // Empty deps because we use refs to access dynamic data
+  }, [auth?.token]); // Rerun if token changes
 
   const addFiles = useCallback((files: File[]) => {
+    if (!auth?.isAuthenticated) {
+        alert("Please log in to upload files.");
+        return;
+    }
+
     const newFileUploads: FileUpload[] = files.map(file => {
       const fileId = `${file.name}-${file.size}-${Date.now()}`;
       const chunkCount = Math.ceil(file.size / CHUNK_SIZE);
@@ -142,7 +157,7 @@ export const useFileUploader = () => {
     
     processQueue();
 
-  }, [processQueue]);
+  }, [processQueue, auth?.isAuthenticated]);
 
   return { fileUploads, addFiles };
 };

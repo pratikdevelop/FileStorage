@@ -1,27 +1,35 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import Navbar from './components/Navbar';
 import LandingPage from './pages/LandingPage';
 import PricingPage from './pages/PricingPage';
 import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
 import AppPage from './pages/AppPage';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 
 export type Page = 'landing' | 'pricing' | 'login' | 'signup' | 'app';
 
-const App: React.FC = () => {
-  const [page, setPage] = useState<Page>('landing');
+const AppContent: React.FC = () => {
+  const { page, setPage, isAuthenticated } = useAuth();
 
   const renderPage = () => {
+    // If authenticated, always show the app page if requested
+    if (isAuthenticated && page === 'app') {
+      return <AppPage />;
+    }
+
+    // Public pages
     switch (page) {
       case 'pricing':
         return <PricingPage setPage={setPage} />;
       case 'login':
-        return <LoginPage setPage={setPage} />;
+        return <LoginPage />;
       case 'signup':
-        return <SignupPage setPage={setPage} />;
+        return <SignupPage />;
       case 'app':
-        return <AppPage />;
+         // If not authenticated and trying to access app, redirect to login
+        return <LoginPage />;
       case 'landing':
       default:
         return <LandingPage setPage={setPage} />;
@@ -30,11 +38,20 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-dark">
-      <Navbar setPage={setPage} currentPage={page} />
+      <Navbar />
       <main>
         {renderPage()}
       </main>
     </div>
+  );
+};
+
+
+const App: React.FC = () => {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 };
 

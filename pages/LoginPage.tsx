@@ -1,16 +1,22 @@
 
-import React from 'react';
-import { Page } from '../App';
+import React, { useState } from 'react';
+import { useAuth } from '../contexts/AuthContext';
 
-interface LoginPageProps {
-  setPage: (page: Page) => void;
-}
+const LoginPage: React.FC = () => {
+  const { setPage, login } = useAuth();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
 
-const LoginPage: React.FC<LoginPageProps> = ({ setPage }) => {
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Simulate login and navigate to the app
-    setPage('app');
+    setError('');
+    try {
+      await login(email, password);
+      // The AuthContext will handle navigation via its internal state update
+    } catch (err: any) {
+       setError(err.message || 'Failed to log in. Please check your credentials.');
+    }
   };
 
   return (
@@ -28,6 +34,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ setPage }) => {
           </p>
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+           {error && <p className="text-sm text-center text-error bg-error/20 p-2 rounded-md">{error}</p>}
           <div className="space-y-4 rounded-md shadow-sm">
             <div>
               <label htmlFor="email-address" className="sr-only">Email address</label>
@@ -39,6 +46,8 @@ const LoginPage: React.FC<LoginPageProps> = ({ setPage }) => {
                 required
                 className="relative block w-full px-3 py-2 text-white bg-gray-light border border-gray-lighter rounded-md focus:outline-none focus:ring-brand-blue focus:border-brand-blue sm:text-sm"
                 placeholder="Email address"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
               />
             </div>
             <div>
@@ -51,6 +60,8 @@ const LoginPage: React.FC<LoginPageProps> = ({ setPage }) => {
                 required
                 className="relative block w-full px-3 py-2 text-white bg-gray-light border border-gray-lighter rounded-md focus:outline-none focus:ring-brand-blue focus:border-brand-blue sm:text-sm"
                 placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
               />
             </div>
           </div>
